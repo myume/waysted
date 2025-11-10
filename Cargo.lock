@@ -5,3 +5,11 @@ version = 4
 [[package]]
 name = "waysted"
 version = "0.1.0"
+
+[[package]]
+name = "waysted-core"
+version = "0.1.0"
+
+[[package]]
+name = "waysted-daemon"
+version = "0.1.0"
