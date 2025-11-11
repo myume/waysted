@@ -4,6 +4,7 @@ use log::info;
 
 mod niri;
 
+#[derive(Debug)]
 pub struct WindowInfo {
     pub title: String,
     pub app_name: String,
@@ -12,7 +13,8 @@ pub struct WindowInfo {
 pub trait Compositor {
     fn get_focused_window(&mut self) -> Result<WindowInfo, String>;
 
-    fn watch_focused_window(&mut self, on_change: fn(WindowInfo) -> ()) -> io::Result<()>;
+    fn watch_focused_window(&mut self, notify_focus_change: fn(WindowInfo) -> ())
+    -> io::Result<()>;
 }
 
 const CURRENT_DESKTOP_ENV: &str = "XDG_CURRENT_DESKTOP";

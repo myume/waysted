@@ -1,7 +1,7 @@
-use std::{collections::HashMap, io};
+use std::{any::Any, collections::HashMap, fmt::Debug, io};
 
 use super::{Compositor, WindowInfo};
-use log::{error, warn};
+use log::{debug, error, warn};
 use niri_ipc::{Event, Request, Response, Window, socket::Socket};
 
 pub struct Niri {
@@ -33,9 +33,12 @@ impl Niri {
     }
 
     fn get_windows(&mut self) -> Result<Vec<Window>, String> {
-        match self.socket.send(Request::FocusedWindow) {
+        match self.socket.send(Request::Windows) {
             Ok(Ok(Response::Windows(windows))) => Ok(windows),
-            Ok(Ok(_)) => Err(String::from("Unexpected reply from niri IPC socket.")),
+            Ok(Ok(response)) => {
+                debug!("Unexpected reply {:?}", response);
+                Err("Unexpected reply from niri IPC socket".to_string())
+            }
             Ok(Err(message)) => Err(format!("Error message returned from niri: {message}")),
             Err(err) => Err(format!("Failure to communicate with niri, {err}")),
         }
@@ -107,7 +110,10 @@ impl Compositor for Niri {
                 })
             }
             // Unexpected reply
-            Ok(Ok(_)) => Err(String::from("Unexpected reply from niri IPC socket.")),
+            Ok(Ok(response)) => {
+                debug!("Unexpected reply {:?}", response);
+                Err("Unexpected reply from niri IPC socket".to_string())
+            }
             // Niri returned an error
             Ok(Err(message)) => Err(format!("Error message returned from niri: {message}")),
             // Failed to communicate with niri
