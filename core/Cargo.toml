@@ -7,3 +7,4 @@ edition = "2024"
 niri-ipc.workspace = true
 log.workspace = true
 rusqlite.workspace = true
+chrono.workspace = true

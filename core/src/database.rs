@@ -1,5 +1,6 @@
 use std::{path::PathBuf, time::Duration};
 
+use chrono::{DateTime, Utc};
 use log::info;
 use rusqlite::{Connection, Error};
 
@@ -23,7 +24,8 @@ impl Database {
                 title text not null,
                 app_name text not null,
                 duration integer not null,
-                timestamp not null default (datetime('now', 'localtime'))
+                start_timestamp not null,
+                end_timestamp not null
             )",
             (),
         )?;
@@ -31,14 +33,23 @@ impl Database {
         Ok(Database { connection })
     }
 
-    pub fn log_focus_duration(&self, window_info: WindowInfo, duration: Duration) {
+    pub fn log_focus_duration(
+        &self,
+        window_info: WindowInfo,
+        duration: Duration,
+        start_timestamp: DateTime<Utc>,
+        end_timestamp: DateTime<Utc>,
+    ) {
         self.connection
             .execute(
-                "insert into usage (title, app_name, duration) values (?1, ?2, ?3)",
+                "insert into usage (title, app_name, duration, start_timestamp, end_timestamp) values (?1, ?2, ?3, ?4, ?5)",
                 (
                     &window_info.title,
                     &window_info.app_name,
                     duration.as_millis() as i64,
+                    // store timestamps in epoch millis so it's easily comparable
+                    start_timestamp.timestamp_millis(),
+                    end_timestamp.timestamp_millis()
                 ),
             )
             .unwrap();

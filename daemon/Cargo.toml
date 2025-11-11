@@ -7,3 +7,4 @@ edition = "2024"
 waysted-core = { path = "../core" }
 log.workspace = true
 env_logger.workspace = true
+chrono.workspace = true

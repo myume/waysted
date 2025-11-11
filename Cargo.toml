@@ -7,3 +7,4 @@ niri-ipc = "=25.8.0"
 log = "0.4.28"
 env_logger = "0.11.8"
 rusqlite = { version = "0.37.0", features = ["bundled"] }
+chrono = "0.4.42"
