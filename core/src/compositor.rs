@@ -2,10 +2,17 @@ use std::{env, io};
 
 mod niri;
 
-pub trait Compositor {
-    fn get_focused_window(&self);
+pub struct WindowInfo {
+    title: String,
+    app_name: String,
+}
 
-    fn watch_focused_window(&self, on_change: fn() -> ());
+type IPCResult = Result<WindowInfo, String>;
+
+pub trait Compositor {
+    fn get_focused_window(&mut self) -> IPCResult;
+
+    fn watch_focused_window(&mut self, on_change: fn(WindowInfo) -> ()) -> io::Result<()>;
 }
 
 const CURRENT_DESKTOP_ENV: &str = "XDG_CURRENT_DESKTOP";

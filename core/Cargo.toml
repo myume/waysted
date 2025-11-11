@@ -5,3 +5,4 @@ edition = "2024"
 
 [dependencies]
 niri-ipc.workspace = true
+log.workspace = true
