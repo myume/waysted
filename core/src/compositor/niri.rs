@@ -1,6 +1,6 @@
 use std::{collections::HashMap, io};
 
-use super::{Compositor, IPCResult, WindowInfo};
+use super::{Compositor, WindowInfo};
 use log::{error, warn};
 use niri_ipc::{Event, Request, Response, Window, socket::Socket};
 
@@ -31,8 +31,13 @@ impl Niri {
         }
     }
 
-    fn get_windows(&self) -> Vec<Window> {
-        todo!()
+    fn get_windows(&mut self) -> Result<Vec<Window>, String> {
+        match self.socket.send(Request::FocusedWindow) {
+            Ok(Ok(Response::Windows(windows))) => Ok(windows),
+            Ok(Ok(_)) => Err(String::from("Unexpected reply from niri IPC socket.")),
+            Ok(Err(message)) => Err(format!("Error message returned from niri: {message}")),
+            Err(err) => Err(format!("Failure to communicate with niri, {err}")),
+        }
     }
 
     fn handle_event(&mut self, event: Event, on_focus_change: fn(WindowInfo) -> ()) {
@@ -92,7 +97,7 @@ impl Niri {
 }
 
 impl Compositor for Niri {
-    fn get_focused_window(&mut self) -> IPCResult {
+    fn get_focused_window(&mut self) -> Result<WindowInfo, String> {
         match self.socket.send(Request::FocusedWindow) {
             Ok(Ok(Response::FocusedWindow(Some(window)))) => Ok(WindowInfo {
                 title: window.title.unwrap_or_default(),
@@ -108,7 +113,8 @@ impl Compositor for Niri {
     }
 
     fn watch_focused_window(&mut self, on_focus_change: fn(WindowInfo) -> ()) -> io::Result<()> {
-        self.populate_windows(self.get_windows());
+        let windows = self.get_windows().map_err(io::Error::other)?;
+        self.populate_windows(windows);
 
         let mut socket = Socket::connect()?;
 

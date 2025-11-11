@@ -3,14 +3,12 @@ use std::{env, io};
 mod niri;
 
 pub struct WindowInfo {
-    title: String,
-    app_name: String,
+    pub title: String,
+    pub app_name: String,
 }
 
-type IPCResult = Result<WindowInfo, String>;
-
 pub trait Compositor {
-    fn get_focused_window(&mut self) -> IPCResult;
+    fn get_focused_window(&mut self) -> Result<WindowInfo, String>;
 
     fn watch_focused_window(&mut self, on_change: fn(WindowInfo) -> ()) -> io::Result<()>;
 }
