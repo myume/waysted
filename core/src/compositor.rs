@@ -29,6 +29,11 @@ pub fn get_current_compositor() -> io::Result<impl Compositor> {
 
     match compositor_name.as_str() {
         "niri" => niri::Niri::new(),
-        _ => todo!(),
+        unsupported => Err(io::Error::new(
+            io::ErrorKind::Unsupported,
+            format!(
+                "The {unsupported} compositor is currently unsupported, please file an issue or open a PR."
+            ),
+        )),
     }
 }
