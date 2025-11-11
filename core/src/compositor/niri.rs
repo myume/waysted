@@ -19,6 +19,7 @@ impl Niri {
             focused_window_id: None,
         })
     }
+
     /// Clears the internal windows state and populates it with the [`new_windows`]
     fn populate_windows(&mut self, new_windows: Vec<Window>) {
         self.windows.clear();
@@ -114,6 +115,7 @@ impl Compositor for Niri {
         }
     }
 
+    /// Start watching the Niri events stream and call [`notify_focus_change`] on the WindowFocusChanged
     fn watch_focused_window(
         &mut self,
         notify_focus_change: fn(WindowInfo) -> (),
