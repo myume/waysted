@@ -1,4 +1,4 @@
-use std::{collections::HashMap, io};
+use std::{collections::HashMap, io, sync::mpsc::Sender};
 
 use super::{Compositor, WindowInfo};
 use log::{debug, error, warn};
@@ -44,7 +44,7 @@ impl Niri {
         }
     }
 
-    fn handle_event(&mut self, event: Event, notify_focus_change: fn(WindowInfo) -> ()) {
+    fn handle_event(&mut self, event: Event, sender: &Sender<WindowInfo>) {
         match event {
             niri_ipc::Event::WindowsChanged { windows } => self.populate_windows(windows),
             niri_ipc::Event::WindowOpenedOrChanged { window } => {
@@ -67,10 +67,14 @@ impl Niri {
                     if let Some(window) = self.windows.get_mut(&id) {
                         window.is_focused = true;
 
-                        notify_focus_change(WindowInfo {
+                        let window_info = WindowInfo {
                             title: window.title.clone().unwrap_or_default(),
                             app_name: window.app_id.clone().unwrap_or_default(),
-                        })
+                        };
+
+                        if let Err(err) = sender.send(window_info) {
+                            error!("Failed to send window info: {err}");
+                        };
                     } else {
                         error!("New focused window is missing: {id}.");
                     }
@@ -122,10 +126,7 @@ impl Compositor for Niri {
     }
 
     /// Start watching the Niri events stream and call [`notify_focus_change`] on the WindowFocusChanged
-    fn watch_focused_window(
-        &mut self,
-        notify_focus_change: fn(WindowInfo) -> (),
-    ) -> io::Result<()> {
+    fn watch_focused_window(&mut self, sender: Sender<WindowInfo>) -> io::Result<()> {
         let windows = self.get_windows().map_err(io::Error::other)?;
         self.populate_windows(windows);
 
@@ -135,7 +136,7 @@ impl Compositor for Niri {
         if matches!(reply, Ok(Response::Handled)) {
             let mut read_event = socket.read_events();
             while let Ok(event) = read_event() {
-                self.handle_event(event, notify_focus_change);
+                self.handle_event(event, &sender);
             }
         }
 

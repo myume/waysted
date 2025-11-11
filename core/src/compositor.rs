@@ -1,4 +1,4 @@
-use std::{env, io};
+use std::{env, io, sync::mpsc::Sender};
 
 use log::info;
 
@@ -11,10 +11,12 @@ pub struct WindowInfo {
 }
 
 pub trait Compositor {
+    /// Retrieve the currently focused window.
     fn get_focused_window(&mut self) -> Result<WindowInfo, String>;
 
-    fn watch_focused_window(&mut self, notify_focus_change: fn(WindowInfo) -> ())
-    -> io::Result<()>;
+    /// Watch for changes in the focused window. Sends the window info over the channel.
+    /// This method will block the main thread and only return if the compositor IPC socket is closed.
+    fn watch_focused_window(&mut self, sender: Sender<WindowInfo>) -> io::Result<()>;
 }
 
 const CURRENT_DESKTOP_ENV: &str = "XDG_CURRENT_DESKTOP";

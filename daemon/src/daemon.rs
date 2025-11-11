@@ -1,30 +1,44 @@
-use std::{io, time::Instant};
+use std::{io, sync::mpsc::channel, thread::spawn, time::Instant};
 
-use log::debug;
+use log::{debug, info};
 use waysted_core::compositor::{Compositor, WindowInfo, get_current_compositor};
 
 pub struct Daemon {
     compositor: Box<dyn Compositor>,
-    focused_window: Option<WindowInfo>,
-    focus_start_time: Instant,
 }
 
 impl Daemon {
     pub fn new() -> io::Result<Self> {
         Ok(Self {
             compositor: Box::new(get_current_compositor()?),
-            focused_window: None,
-            focus_start_time: Instant::now(),
         })
     }
 
     pub fn start(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        self.focus_start_time = Instant::now();
-        self.focused_window = Some(self.compositor.get_focused_window()?);
+        let (sender, receiver) = channel();
 
-        self.compositor.watch_focused_window(|window_info| {
-            debug!("{}", window_info.app_name,);
-        })?;
+        let handle = spawn(move || {
+            let mut start_time = Instant::now();
+            let mut focused_window: Option<WindowInfo> = None;
+            while let Ok(currently_focused_window) = receiver.recv() {
+                if let Some(previously_focused_window) = focused_window {
+                    let duration = start_time.elapsed();
+                    debug!(
+                        "{} focused for {}ms",
+                        previously_focused_window.app_name,
+                        duration.as_millis()
+                    );
+                }
+
+                start_time = Instant::now();
+                focused_window = Some(currently_focused_window);
+            }
+        });
+
+        info!("Watching for changes in the focused window");
+        self.compositor.watch_focused_window(sender)?;
+
+        handle.join().unwrap();
 
         Ok(())
     }
