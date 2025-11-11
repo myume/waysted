@@ -50,8 +50,6 @@ impl Niri {
                 self.windows.remove(&id);
             }
             niri_ipc::Event::WindowFocusChanged { id } => {
-                self.focused_window_id = id;
-
                 if let Some(focused_id) = self.focused_window_id {
                     if let Some(focused_window) = self.windows.get_mut(&focused_id) {
                         focused_window.is_focused = false;
@@ -60,6 +58,7 @@ impl Niri {
                     }
                 }
 
+                self.focused_window_id = id;
                 if let Some(id) = id {
                     if let Some(window) = self.windows.get_mut(&id) {
                         window.is_focused = true;
