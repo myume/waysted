@@ -40,7 +40,7 @@ impl Niri {
         }
     }
 
-    fn handle_event(&mut self, event: Event, on_focus_change: fn(WindowInfo) -> ()) {
+    fn handle_event(&mut self, event: Event, notify_focus_change: fn(WindowInfo) -> ()) {
         match event {
             niri_ipc::Event::WindowsChanged { windows } => self.populate_windows(windows),
             niri_ipc::Event::WindowOpenedOrChanged { window } => {
@@ -63,7 +63,7 @@ impl Niri {
                     if let Some(window) = self.windows.get_mut(&id) {
                         window.is_focused = true;
 
-                        on_focus_change(WindowInfo {
+                        notify_focus_change(WindowInfo {
                             title: window.title.clone().unwrap_or_default(),
                             app_name: window.app_id.clone().unwrap_or_default(),
                         })
@@ -98,10 +98,13 @@ impl Niri {
 impl Compositor for Niri {
     fn get_focused_window(&mut self) -> Result<WindowInfo, String> {
         match self.socket.send(Request::FocusedWindow) {
-            Ok(Ok(Response::FocusedWindow(Some(window)))) => Ok(WindowInfo {
-                title: window.title.unwrap_or_default(),
-                app_name: window.app_id.unwrap_or_default(),
-            }),
+            Ok(Ok(Response::FocusedWindow(Some(window)))) => {
+                self.focused_window_id = Some(window.id);
+                Ok(WindowInfo {
+                    title: window.title.unwrap_or_default(),
+                    app_name: window.app_id.unwrap_or_default(),
+                })
+            }
             // Unexpected reply
             Ok(Ok(_)) => Err(String::from("Unexpected reply from niri IPC socket.")),
             // Niri returned an error
@@ -111,7 +114,10 @@ impl Compositor for Niri {
         }
     }
 
-    fn watch_focused_window(&mut self, on_focus_change: fn(WindowInfo) -> ()) -> io::Result<()> {
+    fn watch_focused_window(
+        &mut self,
+        notify_focus_change: fn(WindowInfo) -> (),
+    ) -> io::Result<()> {
         let windows = self.get_windows().map_err(io::Error::other)?;
         self.populate_windows(windows);
 
@@ -121,7 +127,7 @@ impl Compositor for Niri {
         if matches!(reply, Ok(Response::Handled)) {
             let mut read_event = socket.read_events();
             while let Ok(event) = read_event() {
-                self.handle_event(event, on_focus_change);
+                self.handle_event(event, notify_focus_change);
             }
         }
 
