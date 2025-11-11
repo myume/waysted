@@ -28,7 +28,7 @@ impl Database {
         info!("Database loaded from {}", db_file.display());
 
         connection.execute(
-            "create table if not exists usage (
+            "create table if not exists screentime (
                 id integer primary key,
                 title text not null,
                 app_name text not null,
