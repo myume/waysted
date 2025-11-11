@@ -1,4 +1,4 @@
-use std::{any::Any, collections::HashMap, fmt::Debug, io};
+use std::{collections::HashMap, io};
 
 use super::{Compositor, WindowInfo};
 use log::{debug, error, warn};
