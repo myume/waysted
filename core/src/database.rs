@@ -1,8 +1,8 @@
-use std::{path::PathBuf, time::Duration};
+use std::{env, fs, path::PathBuf, time::Duration};
 
 use chrono::{DateTime, Utc};
 use log::info;
-use rusqlite::{Connection, Error};
+use rusqlite::Connection;
 
 use crate::compositor::WindowInfo;
 
@@ -11,13 +11,22 @@ pub struct Database {
 }
 
 impl Database {
-    pub fn new() -> Result<Self, Error> {
-        let db_path = PathBuf::from("waysted.db");
-        if !db_path.exists() {
+    pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
+        let data_dir = env::var("XDG_DATA_HOME")
+            .or_else(|_| env::var("HOME").map(|home| format!("{home}/.local/share")))
+            .unwrap_or_default();
+        let db_dir = PathBuf::from(data_dir).join("waysted");
+        let db_file = db_dir.join("waysted.db");
+
+        if !db_dir.exists() {
             info!("Waysted db not found, creating new db.");
+            fs::create_dir(db_dir)?;
         }
 
-        let connection = Connection::open(db_path)?;
+        let connection = Connection::open(&db_file)?;
+
+        info!("Database loaded from {}", db_file.display());
+
         connection.execute(
             "create table if not exists usage (
                 id integer primary key,
