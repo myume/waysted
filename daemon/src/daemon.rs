@@ -1,7 +1,10 @@
 use std::{io, sync::mpsc::channel, thread::spawn, time::Instant};
 
 use log::{debug, info};
-use waysted_core::compositor::{Compositor, WindowInfo, get_current_compositor};
+use waysted_core::{
+    compositor::{Compositor, WindowInfo, get_current_compositor},
+    database::Database,
+};
 
 pub struct Daemon {
     compositor: Box<dyn Compositor>,
@@ -17,6 +20,7 @@ impl Daemon {
     pub fn start(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         let (sender, receiver) = channel();
 
+        let db = Database::new()?;
         let handle = spawn(move || {
             let mut start_time = Instant::now();
             let mut focused_window: Option<WindowInfo> = None;
@@ -28,6 +32,8 @@ impl Daemon {
                         previously_focused_window.app_name,
                         duration.as_millis()
                     );
+
+                    db.log_focus_duration(previously_focused_window, duration);
                 }
 
                 start_time = Instant::now();

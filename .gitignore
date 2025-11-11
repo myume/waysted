@@ -25,6 +25,8 @@ target
 
 /target
 
+*.db
+
 # Nix files
 .direnv
 .envrc
