@@ -1,5 +1,7 @@
 use std::{env, io};
 
+use log::info;
+
 mod niri;
 
 pub struct WindowInfo {
@@ -26,6 +28,8 @@ pub fn get_current_compositor() -> io::Result<impl Compositor> {
             format!("{CURRENT_DESKTOP_ENV} is not not valid unicode"),
         ),
     })?;
+
+    info!("{compositor_name} compositor found.");
 
     match compositor_name.as_str() {
         "niri" => niri::Niri::new(),

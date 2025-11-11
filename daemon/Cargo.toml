@@ -4,3 +4,6 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+waysted-core = { path = "../core" }
+log.workspace = true
+env_logger.workspace = true
