@@ -87,20 +87,21 @@ impl DateRange {
     }
 }
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
-    let db = Database::new().unwrap();
+    let db = Database::new()?;
     match cli.command {
         Commands::Screentime { date_range } => {
-            let screentime = db
-                .get_screentime_in_range(date_range.start.to_utc(), date_range.end.to_utc())
-                .unwrap();
+            let screentime =
+                db.get_screentime_in_range(date_range.start.to_utc(), date_range.end.to_utc())?;
 
             if screentime.is_empty() {
+                let date_format = "%Y-%m-%d %H:%M:%S";
                 println!(
-                    "No screentime found from {} to {}",
-                    date_range.start, date_range.end
+                    "No screentime was found from {} to {}",
+                    date_range.start.format(date_format),
+                    date_range.end.format(date_format),
                 );
             }
 
@@ -110,4 +111,6 @@ fn main() {
         }
         Commands::Clear => todo!(),
     }
+
+    Ok(())
 }
