@@ -9,5 +9,3 @@ chrono.workspace = true
 regex.workspace = true
 waysted-core = { path = "../core" }
 serde_json.workspace = true
-ratatui.workspace = true
-crossterm.workspace = true

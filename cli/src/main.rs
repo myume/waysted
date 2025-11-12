@@ -5,12 +5,8 @@ use clap::{Parser, Subcommand};
 use regex::Regex;
 use waysted_core::database::Database;
 
-use crate::{
-    tui::App,
-    utils::{format_bytes, format_millis},
-};
+use crate::utils::{format_bytes, format_millis};
 
-mod tui;
 mod utils;
 
 #[derive(Parser)]
@@ -46,9 +42,6 @@ enum Commands {
         #[command(subcommand)]
         command: DbMetadataCommands,
     },
-
-    /// Start the interactive TUI
-    Tui,
 }
 
 #[derive(Subcommand, Debug)]
@@ -186,11 +179,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             DbMetadataCommands::Path => println!("{}", db.get_path().display()),
             DbMetadataCommands::Size => println!("{}", format_bytes(db.get_size())),
         },
-        Commands::Tui => {
-            let mut terminal = ratatui::init();
-            App::default().run(&mut terminal)?;
-            ratatui::restore();
-        }
     }
 
     Ok(())
