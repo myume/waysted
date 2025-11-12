@@ -1,3 +1,5 @@
+use std::io;
+
 use chrono::{DateTime, Days, Local, NaiveDate, NaiveTime};
 use clap::{Parser, Subcommand};
 use regex::Regex;
@@ -20,7 +22,13 @@ enum Commands {
     },
 
     /// Clear collected screentime from database
-    Clear,
+    Clear {
+        #[arg(short, long, value_parser = DateRange::parse_ymd_to_datetime)]
+        start: Option<DateTime<Local>>,
+
+        #[arg(short, long, value_parser = DateRange::parse_ymd_to_datetime)]
+        end: Option<DateTime<Local>>,
+    },
 }
 
 #[derive(Debug, Clone)]
@@ -53,15 +61,15 @@ impl DateRange {
                         .unwrap();
 
                 if date_re.is_match(s) {
-                    let date = DateRange::parse_ymd_to_datetime(s);
+                    let date = DateRange::parse_ymd_to_datetime(s)?;
                     Ok(DateRange {
                         start: date,
                         end: date,
                     })
                 } else if date_range_re.is_match(s) {
                     let dates = date_range_re.captures(s).unwrap();
-                    let start = DateRange::parse_ymd_to_datetime(&dates["from"]);
-                    let end = DateRange::parse_ymd_to_datetime(&dates["to"]);
+                    let start = DateRange::parse_ymd_to_datetime(&dates["from"])?;
+                    let end = DateRange::parse_ymd_to_datetime(&dates["to"])?;
                     Ok(DateRange { start, end })
                 } else {
                     Err("\ndate_range must be in the form of `today`, `yesterday`, `YYYY-MM-DD` or `YYYY-MM-DD to YYYY-MM-DD`".to_string())
@@ -77,13 +85,14 @@ impl DateRange {
         })
     }
 
-    fn parse_ymd_to_datetime(ymd: &str) -> DateTime<Local> {
-        NaiveDate::parse_from_str(ymd, "%Y-%m-%d")
-            .unwrap()
+    fn parse_ymd_to_datetime(ymd: &str) -> Result<DateTime<Local>, String> {
+        Ok(NaiveDate::parse_from_str(ymd, "%Y-%m-%d")
+            .map_err(|e| e.to_string())?
             .and_hms_opt(0, 0, 0)
             .unwrap()
-            .and_local_timezone(Local::now().timezone())
-            .unwrap()
+            .and_local_timezone(Local)
+            .earliest()
+            .unwrap())
     }
 }
 
@@ -109,7 +118,32 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!("{} ({}%): {}ms", app.app_name, app.percentage, app.duration);
             }
         }
-        Commands::Clear => todo!(),
+        Commands::Clear { start, end } => {
+            print!("Are you sure you want to ");
+            match (start, end) {
+                (None, None) => print!("clear all screentime"),
+                (None, Some(end)) => print!("clear all screentime before {end}"),
+                (Some(start), None) => print!("clear all screentime after {start}"),
+                (Some(start), Some(end)) => {
+                    print!("clear all screentime between {start} and {end}")
+                }
+            }
+            println!("? (y/N)");
+            let mut confirmation = String::new();
+            io::stdin()
+                .read_line(&mut confirmation)
+                .expect("Failed to read line");
+
+            if confirmation.trim_end() == "y" {
+                let num_deleted = db.clear_screentime_in_range(
+                    start.map(|date| date.to_utc()),
+                    end.map(|date| date.to_utc()),
+                )?;
+                println!("Removed {num_deleted} screentime entries.");
+            } else {
+                println!("Screentime was not cleared.");
+            }
+        }
     }
 
     Ok(())

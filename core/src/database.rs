@@ -98,4 +98,31 @@ impl Database {
         })?
         .collect()
     }
+
+    /// Clear all screentime between [`start`] and [`end`]
+    /// if [`start`] is None, then this function clears all screentime before [`end`]
+    /// if [`end`] is None, then this function clears all screentime after [`start`]
+    /// if both are None, then clear all screetime.
+    pub fn clear_screentime_in_range(
+        &self,
+        start: Option<DateTime<Utc>>,
+        end: Option<DateTime<Utc>>,
+    ) -> Result<usize, rusqlite::Error> {
+        match (start, end) {
+            (None, None) => self.connection.execute("DELETE FROM screentime", ()),
+            (None, Some(end)) => self.connection.execute(
+                "DELETE FROM screentime WHERE start_timestamp <= ?1",
+                (end.timestamp_millis(),),
+            ),
+            (Some(start), None) => self.connection.execute(
+                "DELETE FROM screentime WHERE ?1 <= start_timestamp",
+                (start.timestamp_millis(),),
+            ),
+            (Some(start), Some(end)) => self.connection.execute(
+                "DELETE FROM screentime 
+             WHERE ?1 <= start_timestamp AND start_timestamp <= ?2",
+                (start.timestamp_millis(), end.timestamp_millis()),
+            ),
+        }
+    }
 }
