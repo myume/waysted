@@ -1,4 +1,9 @@
-use std::{env, fs, path::PathBuf, time::Duration};
+use std::{
+    env, fs,
+    os::unix::fs::MetadataExt,
+    path::{Path, PathBuf},
+    time::Duration,
+};
 
 use chrono::{DateTime, Utc};
 use log::info;
@@ -8,6 +13,8 @@ use crate::compositor::WindowInfo;
 
 pub struct Database {
     connection: Connection,
+
+    db_path: Box<Path>,
 }
 
 #[derive(Debug)]
@@ -49,7 +56,10 @@ impl Database {
             (),
         )?;
 
-        Ok(Database { connection })
+        Ok(Database {
+            connection,
+            db_path: db_file.into(),
+        })
     }
 
     pub fn log_focus_duration(
@@ -124,5 +134,13 @@ impl Database {
                 (start.timestamp_millis(), end.timestamp_millis()),
             ),
         }
+    }
+
+    pub fn get_path(&self) -> PathBuf {
+        self.db_path.to_path_buf()
+    }
+
+    pub fn get_size(&self) -> u64 {
+        fs::metadata(&self.db_path).unwrap().size()
     }
 }

@@ -14,7 +14,7 @@ struct Cli {
 
 #[derive(Subcommand, Debug)]
 enum Commands {
-    /// Query Screentime data
+    /// Query screentime data
     Screentime {
         #[arg(value_parser = DateRange::parse_date_query)]
         /// The range of dates to retrieve screentime from: one of `today`, `yesterday`, `YYYY-MM-DD` or `YYYY-MM-DD to YYYY-MM-DD`
@@ -29,6 +29,21 @@ enum Commands {
         #[arg(short, long, value_parser = DateRange::parse_ymd_to_datetime)]
         end: Option<DateTime<Local>>,
     },
+
+    /// Get database metadata
+    Db {
+        #[command(subcommand)]
+        command: DbMetadataCommands,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+enum DbMetadataCommands {
+    /// Get the path to the screentime db
+    Path,
+
+    /// Get the total size of the db in bytes
+    Size,
 }
 
 #[derive(Debug, Clone)]
@@ -144,6 +159,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!("Screentime was not cleared.");
             }
         }
+        Commands::Db { command } => match command {
+            DbMetadataCommands::Path => println!("{}", db.get_path().display()),
+            DbMetadataCommands::Size => println!("{}", db.get_size()),
+        },
     }
 
     Ok(())
