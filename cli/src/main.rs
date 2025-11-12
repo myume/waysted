@@ -23,6 +23,9 @@ enum Commands {
         #[arg(value_parser = DateRange::parse_date_query)]
         /// The range of dates to retrieve screentime from: one of `today`, `yesterday`, `YYYY-MM-DD` or `YYYY-MM-DD to YYYY-MM-DD`
         date_range: DateRange,
+
+        #[arg(short, long)]
+        json: bool,
     },
 
     /// Clear collected screentime from database
@@ -120,7 +123,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let db = Database::new()?;
     match cli.command {
-        Commands::Screentime { date_range } => {
+        Commands::Screentime { date_range, json } => {
             let screentime =
                 db.get_screentime_in_range(date_range.start.to_utc(), date_range.end.to_utc())?;
 
@@ -133,13 +136,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 );
             }
 
-            for app in screentime {
-                println!(
-                    "{} ({}%): {}",
-                    app.app_name,
-                    app.percentage,
-                    format_millis(app.duration)
-                );
+            if json {
+                println!("{}", serde_json::to_string_pretty(&screentime)?);
+            } else {
+                for app in screentime {
+                    println!(
+                        "{} ({}%): {}",
+                        app.app_name,
+                        app.percentage,
+                        format_millis(app.duration)
+                    );
+                }
             }
         }
         Commands::Clear { start, end } => {

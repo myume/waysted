@@ -606,6 +606,7 @@ dependencies = [
  "chrono",
  "clap",
  "regex",
+ "serde_json",
  "waysted-core",
 ]
 
@@ -617,6 +618,8 @@ dependencies = [
  "log",
  "niri-ipc",
  "rusqlite",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

@@ -8,6 +8,7 @@ use std::{
 use chrono::{DateTime, Utc};
 use log::info;
 use rusqlite::Connection;
+use serde::{Deserialize, Serialize};
 
 use crate::compositor::WindowInfo;
 
@@ -17,7 +18,7 @@ pub struct Database {
     db_path: Box<Path>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct AppScreentime {
     pub id: i32,
     pub app_name: String,
