@@ -1,4 +1,4 @@
-use chrono::{DateTime, Days, NaiveDate, NaiveTime, Utc};
+use chrono::{DateTime, Days, Local, NaiveDate, NaiveTime};
 use clap::{Parser, Subcommand};
 use regex::Regex;
 use waysted_core::database::Database;
@@ -25,22 +25,22 @@ enum Commands {
 
 #[derive(Debug, Clone)]
 struct DateRange {
-    start: DateTime<Utc>,
-    end: DateTime<Utc>,
+    start: DateTime<Local>,
+    end: DateTime<Local>,
 }
 
 impl DateRange {
     fn parse_date_query(s: &str) -> Result<DateRange, String> {
         let range = match s.to_lowercase().as_str() {
             "today" => {
-                let date = Utc::now();
+                let date = Local::now();
                 Ok(DateRange {
                     start: date,
                     end: date,
                 })
             }
             "yesterday" => {
-                let yesterday = Utc::now() - Days::new(1);
+                let yesterday = Local::now() - Days::new(1);
                 Ok(DateRange {
                     start: yesterday,
                     end: yesterday,
@@ -77,12 +77,13 @@ impl DateRange {
         })
     }
 
-    fn parse_ymd_to_datetime(ymd: &str) -> DateTime<Utc> {
+    fn parse_ymd_to_datetime(ymd: &str) -> DateTime<Local> {
         NaiveDate::parse_from_str(ymd, "%Y-%m-%d")
             .unwrap()
             .and_hms_opt(0, 0, 0)
             .unwrap()
-            .and_utc()
+            .and_local_timezone(Local::now().timezone())
+            .unwrap()
     }
 }
 
@@ -93,7 +94,7 @@ fn main() {
     match cli.command {
         Commands::Screentime { date_range } => {
             let screentime = db
-                .get_screentime_in_range(date_range.start, date_range.end)
+                .get_screentime_in_range(date_range.start.to_utc(), date_range.end.to_utc())
                 .unwrap();
 
             if screentime.is_empty() {
@@ -101,9 +102,8 @@ fn main() {
                     "No screentime found from {} to {}",
                     date_range.start, date_range.end
                 );
-            } else {
-                println!("Screentime from {} to {}", date_range.start, date_range.end);
             }
+
             for app in screentime {
                 println!("{} ({}%): {}ms", app.app_name, app.percentage, app.duration);
             }
