@@ -46,8 +46,22 @@ impl Niri {
 
     fn handle_event(&mut self, event: Event, sender: &Sender<WindowInfo>) {
         match event {
-            niri_ipc::Event::WindowsChanged { windows } => self.populate_windows(windows),
+            niri_ipc::Event::WindowsChanged { windows } => {
+                self.populate_windows(windows);
+            }
             niri_ipc::Event::WindowOpenedOrChanged { window } => {
+                if window.is_focused
+                    && let Some(existing_window_info) = self.windows.get(&window.id)
+                    && existing_window_info.title != window.title
+                {
+                    let window_info = WindowInfo {
+                        title: window.title.clone().unwrap_or_default(),
+                        app_name: window.app_id.clone().unwrap_or_default(),
+                    };
+                    if let Err(err) = sender.send(window_info) {
+                        error!("Failed to send window info: {err}");
+                    };
+                }
                 self.windows.insert(window.id, window);
             }
             niri_ipc::Event::WindowClosed { id } => {

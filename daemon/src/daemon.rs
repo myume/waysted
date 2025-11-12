@@ -31,8 +31,9 @@ impl Daemon {
                     let duration = start_time.elapsed();
                     let end_timestamp = Utc::now();
                     debug!(
-                        "{} focused for {}ms",
+                        "{} - {} focused for {}ms",
                         previously_focused_window.app_name,
+                        previously_focused_window.title,
                         duration.as_millis()
                     );
 
