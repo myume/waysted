@@ -9,3 +9,4 @@ env_logger = "0.11.8"
 rusqlite = { version = "0.37.0", features = ["bundled"] }
 chrono = "0.4.42"
 clap = { version = "4.5.51", features = ["derive"] }
+regex = "1.12.2"
