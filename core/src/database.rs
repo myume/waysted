@@ -92,8 +92,8 @@ impl Database {
     ) -> Result<Vec<AppScreentime>, rusqlite::Error> {
         let mut stmt = self.connection.prepare(
             "SELECT id, app_name, SUM(duration) AS duration,
-             CAST(ROUND(CAST(SUM(duration) AS REAL) / CAST((SELECT SUM(duration) FROM screentime) AS real) * 100.0) AS INTEGER)
-             FROM screentime 
+             CAST(ROUND(CAST(SUM(duration) AS REAL) / CAST((SELECT SUM(duration) FROM screentime 
+             WHERE ?1 <= start_timestamp AND start_timestamp <= ?2) AS real) * 100.0) AS INTEGER) FROM screentime 
              WHERE ?1 <= start_timestamp AND start_timestamp <= ?2
              GROUP BY app_name
              ORDER BY duration DESC",
