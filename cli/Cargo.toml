@@ -7,3 +7,4 @@ edition = "2024"
 clap.workspace = true
 chrono.workspace = true
 regex.workspace = true
+waysted-core = { path = "../core" }

@@ -606,6 +606,7 @@ dependencies = [
  "chrono",
  "clap",
  "regex",
+ "waysted-core",
 ]
 
 [[package]]

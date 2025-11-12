@@ -1,6 +1,7 @@
 use chrono::{DateTime, Days, NaiveDate, NaiveTime, Utc};
 use clap::{Parser, Subcommand};
 use regex::Regex;
+use waysted_core::database::Database;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -88,11 +89,24 @@ impl DateRange {
 fn main() {
     let cli = Cli::parse();
 
+    let db = Database::new().unwrap();
     match cli.command {
-        Commands::Screentime {
-            date_range: date_query,
-        } => {
-            println!("{:?}", date_query);
+        Commands::Screentime { date_range } => {
+            let screentime = db
+                .get_screentime_in_range(date_range.start, date_range.end)
+                .unwrap();
+
+            if screentime.is_empty() {
+                println!(
+                    "No screentime found from {} to {}",
+                    date_range.start, date_range.end
+                );
+            } else {
+                println!("Screentime from {} to {}", date_range.start, date_range.end);
+            }
+            for app in screentime {
+                println!("{} ({}%): {}ms", app.app_name, app.percentage, app.duration);
+            }
         }
         Commands::Clear => todo!(),
     }

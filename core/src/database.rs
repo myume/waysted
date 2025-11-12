@@ -10,6 +10,16 @@ pub struct Database {
     connection: Connection,
 }
 
+#[derive(Debug)]
+pub struct AppScreentime {
+    pub id: i32,
+    pub app_name: String,
+
+    /// duration in ms
+    pub duration: u128,
+    pub percentage: i32,
+}
+
 impl Database {
     pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
         let data_dir = env::var("XDG_DATA_HOME")
@@ -28,13 +38,13 @@ impl Database {
         info!("Database loaded from {}", db_file.display());
 
         connection.execute(
-            "create table if not exists screentime (
-                id integer primary key,
-                title text not null,
-                app_name text not null,
-                duration integer not null,
-                start_timestamp not null,
-                end_timestamp not null
+            "CREATE TABLE IF NOT EXISTS screentime (
+                id INTEGER PRIMARY KEY,
+                title TEXT NOT NULL,
+                app_name TEXT NOT NULL,
+                duration INTEGER NOT NULL,
+                start_timestamp NOT NULL,
+                end_timestamp NOT NULL
             )",
             (),
         )?;
@@ -51,7 +61,7 @@ impl Database {
     ) {
         self.connection
             .execute(
-                "insert into usage (title, app_name, duration, start_timestamp, end_timestamp) values (?1, ?2, ?3, ?4, ?5)",
+                "INSERT INTO screentime (title, app_name, duration, start_timestamp, end_timestamp) VALUES (?1, ?2, ?3, ?4, ?5)",
                 (
                     &window_info.title,
                     &window_info.app_name,
@@ -62,5 +72,30 @@ impl Database {
                 ),
             )
             .unwrap();
+    }
+
+    pub fn get_screentime_in_range(
+        &self,
+        start: DateTime<Utc>,
+        end: DateTime<Utc>,
+    ) -> Result<Vec<AppScreentime>, rusqlite::Error> {
+        let mut stmt = self.connection.prepare(
+            "SELECT id, app_name, SUM(duration) AS duration,
+             CAST(ROUND(CAST(SUM(duration) AS REAL) / CAST((SELECT SUM(duration) FROM screentime) AS real) * 100.0) AS INTEGER)
+             FROM screentime 
+             WHERE ?1 <= start_timestamp AND start_timestamp <= ?2
+             GROUP BY app_name
+             ORDER BY duration DESC",
+        )?;
+
+        stmt.query_map([start.timestamp_millis(), end.timestamp_millis()], |row| {
+            Ok(AppScreentime {
+                id: row.get(0)?,
+                app_name: row.get(1)?,
+                duration: row.get::<usize, i64>(2)? as u128,
+                percentage: row.get(3)?,
+            })
+        })?
+        .collect()
     }
 }
