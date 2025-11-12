@@ -5,6 +5,10 @@ use clap::{Parser, Subcommand};
 use regex::Regex;
 use waysted_core::database::Database;
 
+use crate::utils::{format_bytes, format_millis};
+
+mod utils;
+
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 struct Cli {
@@ -130,7 +134,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
 
             for app in screentime {
-                println!("{} ({}%): {}ms", app.app_name, app.percentage, app.duration);
+                println!(
+                    "{} ({}%): {}",
+                    app.app_name,
+                    app.percentage,
+                    format_millis(app.duration)
+                );
             }
         }
         Commands::Clear { start, end } => {
@@ -161,7 +170,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Commands::Db { command } => match command {
             DbMetadataCommands::Path => println!("{}", db.get_path().display()),
-            DbMetadataCommands::Size => println!("{}", db.get_size()),
+            DbMetadataCommands::Size => println!("{}", format_bytes(db.get_size())),
         },
     }
 
