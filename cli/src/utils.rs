@@ -35,6 +35,8 @@ pub fn format_millis(millis: u128) -> String {
     }
     if ms > 0 {
         s.push_str(&format!("{}ms ", ms));
+    } else if millis == 0 {
+        s.push_str("<1ms ");
     }
 
     if s.ends_with(" ") {
