@@ -42,10 +42,19 @@ pub struct ScreenTimeInstance {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct TitleInstance {
+    pub title: String,
+    pub app_name: String,
+
+    /// duration in ms
+    pub duration: u128,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct AppGroup {
     pub app_name: String,
     pub duration: u128,
-    pub instances: Vec<ScreenTimeInstance>,
+    pub instances: Vec<TitleInstance>,
 }
 
 impl Database {
@@ -159,9 +168,26 @@ impl Database {
         start: DateTime<Utc>,
         end: DateTime<Utc>,
     ) -> Result<Vec<AppGroup>, rusqlite::Error> {
-        let logs = self.get_logs(start, end)?;
+        let mut stmt = self.connection.prepare(
+            "SELECT title, app_name, SUM(duration) AS duration
+             FROM screentime
+             WHERE ?1 <= start_timestamp AND start_timestamp <= ?2 and duration > 0
+             GROUP BY app_name, title
+             ORDER BY duration DESC",
+        )?;
+
+        let titles: Result<Vec<TitleInstance>, rusqlite::Error> = stmt
+            .query_map([start.timestamp_millis(), end.timestamp_millis()], |row| {
+                Ok(TitleInstance {
+                    title: row.get(0)?,
+                    app_name: row.get(1)?,
+                    duration: row.get::<usize, i64>(2)? as u128,
+                })
+            })?
+            .collect();
+
         let mut app_groups = HashMap::new();
-        for log in logs {
+        for log in titles? {
             if !app_groups.contains_key(&log.app_name) {
                 app_groups.insert(log.app_name.clone(), vec![log]);
             } else {
