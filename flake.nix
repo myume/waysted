@@ -16,20 +16,23 @@
         pkgs = import nixpkgs {inherit system;};
         inherit (pkgs) lib rustPlatform;
       in {
-        packages.default = rustPlatform.buildRustPackage {
-          pname = "waysted";
-          version = "0.1.0";
+        packages = rec {
+          waysted = rustPlatform.buildRustPackage {
+            pname = "waysted";
+            version = "0.1.0";
 
-          src = ./.;
+            src = ./.;
 
-          cargoLock.lockFile = ./Cargo.lock;
+            cargoLock.lockFile = ./Cargo.lock;
 
-          meta = {
-            description = "A Lightweight screentime tracker for wayland";
-            license = lib.licenses.mit;
-            platforms = lib.platforms.linux;
-            mainProgram = "waysted";
+            meta = {
+              description = "A Lightweight screentime tracker for wayland";
+              license = lib.licenses.mit;
+              platforms = lib.platforms.linux;
+              mainProgram = "waysted";
+            };
           };
+          default = waysted;
         };
 
         devShell = with pkgs;
@@ -38,5 +41,11 @@
             RUST_SRC_PATH = rustPlatform.rustLibSrc;
           };
       }
-    );
+    )
+    // {
+      homeManagerModules = {
+        default = self.homeManagerModules.waysted;
+        waysted = import ./nix/hm-module.nix self;
+      };
+    };
 }
