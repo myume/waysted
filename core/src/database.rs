@@ -200,14 +200,18 @@ impl Database {
             .iter_mut()
             .for_each(|(_, instances)| instances.sort_by(|a, b| b.duration.cmp(&a.duration)));
 
-        Ok(app_groups
+        let mut data: Vec<AppGroup> = app_groups
             .into_iter()
             .map(|(app_name, instances)| AppGroup {
                 app_name,
                 duration: instances.iter().map(|x| x.duration).sum(),
                 instances,
             })
-            .collect())
+            .collect();
+
+        data.sort_by(|a, b| b.duration.cmp(&a.duration));
+
+        Ok(data)
     }
 
     /// Clear all screentime between [`start`] and [`end`]
