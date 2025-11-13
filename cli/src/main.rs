@@ -2,6 +2,7 @@ use std::io;
 
 use chrono::{DateTime, Days, Local, NaiveDate, NaiveTime};
 use clap::{Parser, Subcommand};
+use pager::Pager;
 use regex::Regex;
 use waysted_core::database::Database;
 
@@ -160,7 +161,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 );
             }
 
-            println!("{}", data.to_string(json));
+            let output = data.to_string(json);
+            if let Some((_, terminal_size::Height(h))) = terminal_size::terminal_size()
+                && output.lines().count() > h.into()
+            {
+                Pager::new().setup();
+            }
+            println!("{}", output);
         }
         Commands::Clear { start, end } => {
             print!("Are you sure you want to ");

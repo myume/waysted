@@ -9,3 +9,5 @@ chrono.workspace = true
 regex.workspace = true
 waysted-core = { path = "../core" }
 serde_json.workspace = true
+pager.workspace = true
+terminal_size.workspace = true
