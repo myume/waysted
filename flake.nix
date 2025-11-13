@@ -2,7 +2,6 @@
   description = "A screen time tracker for wayland";
 
   inputs = {
-    naersk.url = "github:nix-community/naersk/master";
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     utils.url = "github:numtide/flake-utils";
   };
@@ -11,14 +10,28 @@
     self,
     nixpkgs,
     utils,
-    naersk,
   }:
     utils.lib.eachDefaultSystem (
       system: let
         pkgs = import nixpkgs {inherit system;};
-        naersk-lib = pkgs.callPackage naersk {};
+        inherit (pkgs) lib rustPlatform;
       in {
-        defaultPackage = naersk-lib.buildPackage ./.;
+        packages.default = rustPlatform.buildRustPackage {
+          pname = "waysted";
+          version = "0.1.0";
+
+          src = ./.;
+
+          cargoLock.lockFile = ./Cargo.lock;
+
+          meta = {
+            description = "A Lightweight screentime tracker for wayland";
+            license = lib.licenses.mit;
+            platforms = lib.platforms.linux;
+            mainProgram = "waysted";
+          };
+        };
+
         devShell = with pkgs;
           mkShell {
             buildInputs = [cargo rustc rustfmt pre-commit rustPackages.clippy];
