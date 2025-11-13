@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     env, fs,
     os::unix::fs::MetadataExt,
     path::{Path, PathBuf},
@@ -26,6 +27,25 @@ pub struct AppScreentime {
     /// duration in ms
     pub duration: u128,
     pub percentage: i32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ScreenTimeInstance {
+    pub id: i32,
+    pub title: String,
+    pub app_name: String,
+
+    /// duration in ms
+    pub duration: u128,
+    pub start_timestamp: i64,
+    pub end_timestamp: i64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AppGroup {
+    pub app_name: String,
+    pub duration: u128,
+    pub instances: Vec<ScreenTimeInstance>,
 }
 
 impl Database {
@@ -108,6 +128,56 @@ impl Database {
             })
         })?
         .collect()
+    }
+
+    pub fn get_logs(
+        &self,
+        start: DateTime<Utc>,
+        end: DateTime<Utc>,
+    ) -> Result<Vec<ScreenTimeInstance>, rusqlite::Error> {
+        let mut stmt = self.connection.prepare(
+            "SELECT * FROM screentime
+             WHERE ?1 <= start_timestamp AND start_timestamp <= ?2
+             ORDER BY start_timestamp",
+        )?;
+
+        stmt.query_map([start.timestamp_millis(), end.timestamp_millis()], |row| {
+            Ok(ScreenTimeInstance {
+                id: row.get(0)?,
+                title: row.get(1)?,
+                app_name: row.get(2)?,
+                duration: row.get::<usize, i64>(3)? as u128,
+                start_timestamp: row.get(4)?,
+                end_timestamp: row.get(5)?,
+            })
+        })?
+        .collect()
+    }
+
+    pub fn get_title_breakdown(
+        &self,
+        start: DateTime<Utc>,
+        end: DateTime<Utc>,
+    ) -> Result<Vec<AppGroup>, rusqlite::Error> {
+        let logs = self.get_logs(start, end)?;
+        let mut app_groups = HashMap::new();
+        for log in logs {
+            if !app_groups.contains_key(&log.app_name) {
+                app_groups.insert(log.app_name.clone(), vec![log]);
+            } else {
+                let instances = app_groups.get_mut(&log.app_name).unwrap();
+                instances.push(log);
+            }
+        }
+
+        Ok(app_groups
+            .into_iter()
+            .map(|(app_name, instances)| AppGroup {
+                app_name,
+                duration: instances.iter().map(|x| x.duration).sum(),
+                instances,
+            })
+            .collect())
     }
 
     /// Clear all screentime between [`start`] and [`end`]

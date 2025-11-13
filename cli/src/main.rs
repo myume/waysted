@@ -24,8 +24,17 @@ enum Commands {
         /// The range of dates to retrieve screentime from: one of `today`, `yesterday`, `YYYY-MM-DD` or `YYYY-MM-DD to YYYY-MM-DD`
         date_range: DateRange,
 
+        /// Output as JSON
         #[arg(short, long)]
         json: bool,
+
+        /// Breakdown screentime by window titles
+        #[arg(short, long, group = "Mode")]
+        titles: bool,
+
+        /// Return raw screentime logs
+        #[arg(short, long, group = "Mode")]
+        logs: bool,
     },
 
     /// Clear collected screentime from database
@@ -123,11 +132,61 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let db = Database::new()?;
     match cli.command {
-        Commands::Screentime { date_range, json } => {
-            let screentime =
-                db.get_screentime_in_range(date_range.start.to_utc(), date_range.end.to_utc())?;
+        Commands::Screentime {
+            date_range,
+            json,
+            titles,
+            logs,
+        } => {
+            let (size, output) = if titles {
+                let data =
+                    db.get_title_breakdown(date_range.start.to_utc(), date_range.end.to_utc())?;
 
-            if screentime.is_empty() {
+                let output = if json {
+                    serde_json::to_string_pretty(&data)?
+                } else {
+                    let mut s = String::new();
+                    for app in &data {
+                        s.push_str(&format!(
+                            "{} ({}):\n",
+                            app.app_name,
+                            format_millis(app.duration)
+                        ));
+                        for title in &app.instances {
+                            s.push_str(&format!(
+                                "\t\"{}\": {}\n",
+                                title.title,
+                                format_millis(title.duration)
+                            ));
+                        }
+                    }
+                    s
+                };
+                (data.len(), output)
+            } else if logs {
+                let data = db.get_logs(date_range.start.to_utc(), date_range.end.to_utc())?;
+                (data.len(), serde_json::to_string_pretty(&data).unwrap())
+            } else {
+                let data =
+                    db.get_screentime_in_range(date_range.start.to_utc(), date_range.end.to_utc())?;
+                let output = if json {
+                    serde_json::to_string_pretty(&data)?
+                } else {
+                    let mut s = String::new();
+                    for app in &data {
+                        s.push_str(&format!(
+                            "{} ({}%): {}\n",
+                            app.app_name,
+                            app.percentage,
+                            format_millis(app.duration)
+                        ));
+                    }
+                    s
+                };
+                (data.len(), output)
+            };
+
+            if size == 0 {
                 let date_format = "%Y-%m-%d %H:%M:%S";
                 println!(
                     "No screentime was found from {} to {}",
@@ -135,19 +194,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     date_range.end.format(date_format),
                 );
             }
-
-            if json {
-                println!("{}", serde_json::to_string_pretty(&screentime)?);
-            } else {
-                for app in screentime {
-                    println!(
-                        "{} ({}%): {}",
-                        app.app_name,
-                        app.percentage,
-                        format_millis(app.duration)
-                    );
-                }
-            }
+            println!("{}", output);
         }
         Commands::Clear { start, end } => {
             print!("Are you sure you want to ");
