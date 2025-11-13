@@ -5,8 +5,9 @@ use clap::{Parser, Subcommand};
 use regex::Regex;
 use waysted_core::database::Database;
 
-use crate::utils::{format_bytes, format_millis};
+use crate::{data_output::DataOutput, utils::format_bytes};
 
+mod data_output;
 mod utils;
 
 #[derive(Parser)]
@@ -29,11 +30,11 @@ enum Commands {
         json: bool,
 
         /// Breakdown screentime by window titles
-        #[arg(short, long, group = "Mode")]
+        #[arg(long, group = "Mode")]
         titles: bool,
 
         /// Return raw screentime logs
-        #[arg(short, long, group = "Mode")]
+        #[arg(long, group = "Mode")]
         logs: bool,
     },
 
@@ -138,55 +139,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             titles,
             logs,
         } => {
-            let (size, output) = if titles {
-                let data =
-                    db.get_title_breakdown(date_range.start.to_utc(), date_range.end.to_utc())?;
-
-                let output = if json {
-                    serde_json::to_string_pretty(&data)?
-                } else {
-                    let mut s = String::new();
-                    for app in &data {
-                        s.push_str(&format!(
-                            "{} ({}):\n",
-                            app.app_name,
-                            format_millis(app.duration)
-                        ));
-                        for title in &app.instances {
-                            s.push_str(&format!(
-                                "    \"{}\": {}\n",
-                                title.title,
-                                format_millis(title.duration)
-                            ));
-                        }
-                    }
-                    s
-                };
-                (data.len(), output)
+            let data: Box<dyn DataOutput> = if titles {
+                Box::new(
+                    db.get_title_breakdown(date_range.start.to_utc(), date_range.end.to_utc())?,
+                )
             } else if logs {
-                let data = db.get_logs(date_range.start.to_utc(), date_range.end.to_utc())?;
-                (data.len(), serde_json::to_string_pretty(&data).unwrap())
+                Box::new(db.get_logs(date_range.start.to_utc(), date_range.end.to_utc())?)
             } else {
-                let data =
-                    db.get_screentime_in_range(date_range.start.to_utc(), date_range.end.to_utc())?;
-                let output = if json {
-                    serde_json::to_string_pretty(&data)?
-                } else {
-                    let mut s = String::new();
-                    for app in &data {
-                        s.push_str(&format!(
-                            "{} ({}%): {}\n",
-                            app.app_name,
-                            app.percentage,
-                            format_millis(app.duration)
-                        ));
-                    }
-                    s
-                };
-                (data.len(), output)
+                Box::new(
+                    db.get_screentime_in_range(date_range.start.to_utc(), date_range.end.to_utc())?,
+                )
             };
 
-            if size == 0 {
+            if data.size() == 0 {
                 let date_format = "%Y-%m-%d %H:%M:%S";
                 println!(
                     "No screentime was found from {} to {}",
@@ -195,7 +160,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 );
             }
 
-            println!("{}", output);
+            println!("{}", data.to_string(json));
         }
         Commands::Clear { start, end } => {
             print!("Are you sure you want to ");
