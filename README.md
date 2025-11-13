@@ -1,6 +1,6 @@
 # Waysted
 
-A lightweight and extendable screen tracker for wayland.
+A lightweight and extendable screentime tracker for wayland.
 
 ## Features
 
