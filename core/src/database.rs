@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    env, fs,
+    env, fs, io,
     os::unix::fs::MetadataExt,
     path::{Path, PathBuf},
     time::Duration,
@@ -58,16 +58,23 @@ pub struct AppGroup {
 }
 
 impl Database {
-    pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn new(create_new: bool) -> Result<Self, Box<dyn std::error::Error>> {
         let data_dir = env::var("XDG_DATA_HOME")
             .or_else(|_| env::var("HOME").map(|home| format!("{home}/.local/share")))
             .unwrap_or_default();
         let db_dir = PathBuf::from(data_dir).join("waysted");
         let db_file = db_dir.join("waysted.db");
 
-        if !db_dir.exists() {
+        if !db_dir.exists() && create_new {
             info!("Waysted db not found, creating new db.");
             fs::create_dir(db_dir)?;
+        }
+
+        if !db_file.exists() && !create_new {
+            return Err(Box::new(io::Error::new(
+                io::ErrorKind::NotFound,
+                "Waysted Database not found.",
+            )));
         }
 
         let connection = Connection::open(&db_file)?;

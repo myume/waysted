@@ -21,7 +21,7 @@ impl Daemon {
     pub fn start(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         let (sender, receiver) = channel();
 
-        let db = Database::new()?;
+        let db = Database::new(true)?;
         let handle = spawn(move || {
             let mut start_timestamp = Utc::now();
             let mut start_time = Instant::now();

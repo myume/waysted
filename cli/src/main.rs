@@ -132,7 +132,7 @@ impl DateRange {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
-    let db = Database::new()?;
+    let db = Database::new(false).map_err(|e| e.to_string())?;
     match cli.command {
         Commands::Screentime {
             date_range,
