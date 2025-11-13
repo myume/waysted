@@ -170,6 +170,10 @@ impl Database {
             }
         }
 
+        app_groups
+            .iter_mut()
+            .for_each(|(_, instances)| instances.sort_by(|a, b| b.duration.cmp(&a.duration)));
+
         Ok(app_groups
             .into_iter()
             .map(|(app_name, instances)| AppGroup {
