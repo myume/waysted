@@ -138,7 +138,7 @@ impl Database {
         let mut stmt = self.connection.prepare(
             "SELECT * FROM screentime
              WHERE ?1 <= start_timestamp AND start_timestamp <= ?2
-             ORDER BY start_timestamp",
+             ORDER BY start_timestamp DESC",
         )?;
 
         stmt.query_map([start.timestamp_millis(), end.timestamp_millis()], |row| {
