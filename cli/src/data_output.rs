@@ -45,8 +45,8 @@ impl DataOutput for Vec<AppGroup> {
                 ));
                 for title in &app.instances {
                     s.push_str(&format!(
-                        "    -> \"{}\": {}\n",
-                        title.title,
+                        "    -> \"{}\" ({})\n",
+                        title.title.trim(),
                         format_millis(title.duration)
                     ));
                 }
