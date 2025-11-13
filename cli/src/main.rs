@@ -154,7 +154,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         ));
                         for title in &app.instances {
                             s.push_str(&format!(
-                                "\t\"{}\": {}\n",
+                                "    \"{}\": {}\n",
                                 title.title,
                                 format_millis(title.duration)
                             ));
@@ -194,6 +194,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     date_range.end.format(date_format),
                 );
             }
+
             println!("{}", output);
         }
         Commands::Clear { start, end } => {
