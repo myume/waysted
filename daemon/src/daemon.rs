@@ -14,7 +14,7 @@ pub struct Daemon {
 impl Daemon {
     pub fn new() -> io::Result<Self> {
         Ok(Self {
-            compositor: Box::new(get_current_compositor()?),
+            compositor: get_current_compositor()?,
         })
     }
 

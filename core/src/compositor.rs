@@ -2,6 +2,7 @@ use std::{env, io, sync::mpsc::Sender};
 
 use log::info;
 
+mod hyprland;
 mod niri;
 
 #[derive(Debug)]
@@ -21,7 +22,7 @@ pub trait Compositor {
 
 const CURRENT_DESKTOP_ENV: &str = "XDG_CURRENT_DESKTOP";
 
-pub fn get_current_compositor() -> io::Result<impl Compositor> {
+pub fn get_current_compositor() -> io::Result<Box<dyn Compositor>> {
     let compositor_name = env::var(CURRENT_DESKTOP_ENV).map_err(|err| match err {
         env::VarError::NotPresent => io::Error::new(
             io::ErrorKind::NotFound,
@@ -35,8 +36,9 @@ pub fn get_current_compositor() -> io::Result<impl Compositor> {
 
     info!("{compositor_name} compositor found.");
 
-    match compositor_name.as_str() {
-        "niri" => niri::Niri::new(),
+    match compositor_name.to_lowercase().as_str() {
+        "niri" => Ok(Box::new(niri::Niri::new()?)),
+        "hyprland" => Ok(Box::new(hyprland::Hyprland::new()?)),
         unsupported => Err(io::Error::new(
             io::ErrorKind::Unsupported,
             format!(
