@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 niri-ipc.workspace = true
+hyprland.workspace = true
 log.workspace = true
 rusqlite.workspace = true
 chrono.workspace = true
