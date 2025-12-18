@@ -24,7 +24,7 @@ As a result, we will have to support and integrate each compositor individually.
 ### Currently supported compositors:
 
 - [x] Niri
-- [ ] Hyprland
+- [x] Hyprland
 
 If your compositor isn't supported, file an issue or open a PR.
 
