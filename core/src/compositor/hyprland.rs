@@ -21,7 +21,7 @@ impl Compositor for Hyprland {
                 title: client.title,
                 app_name: client.class.to_string(),
             }),
-            Ok(None) => Err(format!("No window has focus in Hyprland")),
+            Ok(None) => Err("No window has focus in Hyprland".to_owned()),
             Err(err) => Err(format!("Failed to get focused window from Hyprland: {err}")),
         }
     }

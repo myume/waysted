@@ -1,4 +1,4 @@
-use chrono::DateTime;
+use chrono::{DateTime, Local};
 use waysted_core::database::{AppGroup, AppScreentime, ScreenTimeInstance};
 
 use crate::utils::format_millis;
@@ -68,9 +68,15 @@ impl DataOutput for Vec<ScreenTimeInstance> {
             let mut s = String::new();
             for log in self {
                 s.push_str(&format!(
-                    "[{:<25} - {:<25}] {:<15} >> {} ({})\n",
-                    DateTime::from_timestamp_millis(log.start_timestamp).unwrap(),
-                    DateTime::from_timestamp_millis(log.end_timestamp).unwrap(),
+                    "[{} - {}] {:<15} >> {} ({})\n",
+                    DateTime::from_timestamp_millis(log.start_timestamp)
+                        .unwrap()
+                        .with_timezone(&Local)
+                        .format("%Y-%m-%d %H:%M:%S%.f"),
+                    DateTime::from_timestamp_millis(log.end_timestamp)
+                        .unwrap()
+                        .with_timezone(&Local)
+                        .format("%Y-%m-%d %H:%M:%S%.f"),
                     log.app_name,
                     log.title,
                     format_millis(log.duration)
