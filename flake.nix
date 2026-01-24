@@ -23,7 +23,12 @@
 
             src = ./.;
 
-            cargoLock.lockFile = ./Cargo.lock;
+            cargoLock = {
+              lockFile = ./Cargo.lock;
+              outputHashes = {
+                "niri-ipc-25.11.0" = "sha256-ntsZsruw3GYjxOY4WEgJpYKHHPfFvXPfYSSOX5OKyek=";
+              };
+            };
 
             meta = {
               description = "A Lightweight screentime tracker for wayland";

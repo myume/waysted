@@ -149,8 +149,11 @@ impl Compositor for Niri {
         let reply = socket.send(Request::EventStream)?;
         if matches!(reply, Ok(Response::Handled)) {
             let mut read_event = socket.read_events();
-            while let Ok(event) = read_event() {
-                self.handle_event(event, &sender);
+            loop {
+                match read_event() {
+                    Ok(event) => self.handle_event(event, &sender),
+                    Err(e) => return Err(io::Error::other(e)),
+                }
             }
         }
 
