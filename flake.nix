@@ -43,6 +43,7 @@
         devShell = with pkgs;
           mkShell {
             buildInputs = [cargo rustc rustfmt pre-commit rustPackages.clippy];
+            packages = [nodejs];
             RUST_SRC_PATH = rustPlatform.rustLibSrc;
           };
       }
