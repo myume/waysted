@@ -63,6 +63,7 @@ To setup the service, you can do something like this in your home manager setup:
 
   services.waysted = {
     enable = true;
+    compositor = "niri"; # or "hyprland"
   };
 }
 ```

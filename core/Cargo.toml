@@ -3,9 +3,14 @@ name = "waysted-core"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+niri = ["dep:niri-ipc"]
+hyprland = ["dep:hyprland"]
+
 [dependencies]
-niri-ipc.workspace = true
-hyprland.workspace = true
+niri-ipc = { workspace = true, optional = true}
+hyprland = { workspace = true, optional = true }
+
 log.workspace = true
 rusqlite.workspace = true
 chrono.workspace = true

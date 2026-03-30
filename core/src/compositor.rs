@@ -2,7 +2,10 @@ use std::{env, io, sync::mpsc::Sender};
 
 use log::info;
 
+#[cfg(feature = "hyprland")]
 mod hyprland;
+
+#[cfg(feature = "niri")]
 mod niri;
 
 #[derive(Debug)]
@@ -37,8 +40,24 @@ pub fn get_current_compositor() -> io::Result<Box<dyn Compositor>> {
     info!("{compositor_name} compositor found.");
 
     match compositor_name.to_lowercase().as_str() {
-        "niri" => Ok(Box::new(niri::Niri::new()?)),
-        "hyprland" => Ok(Box::new(hyprland::Hyprland::new()?)),
+        "niri" => {
+            #[cfg(feature = "niri")]
+            return Ok(Box::new(niri::Niri::new()?));
+
+            Err(io::Error::new(
+                io::ErrorKind::Unsupported,
+                "niri feature is required for niri compositor".to_string(),
+            ))
+        }
+        "hyprland" => {
+            #[cfg(feature = "hyprland")]
+            return Ok(Box::new(hyprland::Hyprland::new()?));
+
+            Err(io::Error::new(
+                io::ErrorKind::Unsupported,
+                "hyprland feature is required for hyprland compositor".to_string(),
+            ))
+        }
         unsupported => Err(io::Error::new(
             io::ErrorKind::Unsupported,
             format!(

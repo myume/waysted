@@ -26,7 +26,7 @@
             cargoLock = {
               lockFile = ./Cargo.lock;
               outputHashes = {
-                "niri-ipc-25.11.0" = "sha256-ntsZsruw3GYjxOY4WEgJpYKHHPfFvXPfYSSOX5OKyek=";
+                "niri-ipc-25.11.0" = "sha256-q54voqTvNbsa1+q4Q48RqrwDRNxEHnAstMQhFEfp37s=";
               };
             };
 
