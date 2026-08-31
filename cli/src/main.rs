@@ -11,6 +11,13 @@ use crate::{data_output::DataOutput, utils::format_bytes};
 mod data_output;
 mod utils;
 
+#[cfg(unix)]
+fn reset_sigpipe() {
+    unsafe {
+        libc::signal(libc::SIGPIPE, libc::SIG_DFL);
+    }
+}
+
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 struct Cli {
@@ -165,6 +172,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             if let Some((_, terminal_size::Height(h))) = terminal_size::terminal_size()
                 && output.lines().count() > h.into()
             {
+                #[cfg(unix)]
+                reset_sigpipe();
                 Pager::new().setup();
             }
             println!("{}", output);

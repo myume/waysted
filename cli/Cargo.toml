@@ -11,3 +11,4 @@ waysted-core = { path = "../core" }
 serde_json.workspace = true
 pager.workspace = true
 terminal_size.workspace = true
+libc.workspace = true
